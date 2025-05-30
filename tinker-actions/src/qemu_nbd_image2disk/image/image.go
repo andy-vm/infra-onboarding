@@ -76,19 +76,9 @@ func Write(ctx context.Context, log *slog.Logger, sourceImage, destinationDevice
 	log.Info(fmt.Sprintf("SHA-256 hash of the downloaded file: %s", actualSHA256))
 	log.Info("Successfully verified SHA-256 checksum")
 
-	// Attach the qcow2 image as a network block device
-	nbdDevice := "/dev/nbd0"
-	cmdNbd := exec.Command("qemu-nbd", "--connect="+nbdDevice, tmpFile.Name())
-	cmdNbd.Stdout = os.Stdout
-	cmdNbd.Stderr = os.Stderr
-	if err := cmdNbd.Run(); err != nil {
-		return fmt.Errorf("network block device attach failed: %v", err)
-	}
-	defer exec.Command("qemu-nbd", "--disconnect", nbdDevice).Run()
-	log.Info("Successfully attached qcow2 image as network block device")
-
-	// Install the OS to the disk using DD
-	cmdDD := exec.Command("dd", "if="+nbdDevice, "of="+destinationDevice, "bs=4M")
+	// Install the OS to the disk
+	qcmd := fmt.Sprintf("qemu-img convert -p -f qcow2 -O raw %s %s", tmpFile.Name(), destinationDevice)
+	cmdDD := exec.Command(qcmd)
 	cmdDD.Stdout = os.Stdout
 	cmdDD.Stderr = os.Stderr
 
