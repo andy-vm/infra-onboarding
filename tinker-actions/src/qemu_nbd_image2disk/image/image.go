@@ -77,8 +77,7 @@ func Write(ctx context.Context, log *slog.Logger, sourceImage, destinationDevice
 	log.Info("Successfully verified SHA-256 checksum")
 
 	// Install the OS to the disk
-	qcmd := fmt.Sprintf("qemu-img convert -p -f qcow2 -O raw %s %s", tmpFile.Name(), destinationDevice)
-	cmdDD := exec.Command(qcmd)
+	cmdDD := exec.Command("qemu-img", "convert", "-p", "-f", "qcow2", "-O", "raw", tmpFile.Name(), destinationDevice)
 	cmdDD.Stdout = os.Stdout
 	cmdDD.Stderr = os.Stderr
 
