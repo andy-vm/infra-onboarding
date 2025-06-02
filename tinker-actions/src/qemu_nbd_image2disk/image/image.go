@@ -93,7 +93,7 @@ func Write(ctx context.Context, log *slog.Logger, sourceImage, destinationDevice
 	}
 	log.Info(fmt.Sprintf("Successfully converted cloud image to %s", tmpFileRaw.Name()))
 
-	cmdDD := exec.Command("dd", "if="+tmpFileRaw.Name(), "of="+destinationDevice, "bs=4M", "status=progress")
+	cmdDD := exec.Command("dd", "if="+tmpFileRaw.Name(), "of="+destinationDevice, "bs=4M")
 	cmdDD.Stdout = os.Stdout
 	cmdDD.Stderr = os.Stderr
 
