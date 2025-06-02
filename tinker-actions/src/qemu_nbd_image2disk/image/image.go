@@ -48,6 +48,13 @@ func Write(ctx context.Context, log *slog.Logger, sourceImage, destinationDevice
 	defer os.Remove(tmpFile.Name())
 	log.Info("Successfully created empty temp file")
 
+	tmpFileRaw, err := os.CreateTemp("", "img-*.raw")
+	if err != nil {
+		return fmt.Errorf("temp file raw creation failed: %v", err)
+	}
+	defer os.Remove(tmpFileRaw.Name())
+	log.Info("Successfully created empty temp file raw")
+
 	// Create a SHA-256 hash object
 	hash := sha256.New()
 
@@ -77,7 +84,16 @@ func Write(ctx context.Context, log *slog.Logger, sourceImage, destinationDevice
 	log.Info("Successfully verified SHA-256 checksum")
 
 	// Install the OS to the disk
-	cmdDD := exec.Command("qemu-img", "convert", "-p", "-f", "qcow2", "-O", "raw", tmpFile.Name(), destinationDevice)
+	cmdConv := exec.Command("qemu-img", "convert", "-f", "qcow2", "-O", "raw", tmpFile.Name(), tmpFileRaw.Name())
+	cmdConv.Stdout = os.Stdout
+	cmdConv.Stderr = os.Stderr
+
+	if err := cmdConv.Run(); err != nil {
+		return fmt.Errorf("failed to convert image: %v", err)
+	}
+	log.Info(fmt.Sprintf("Successfully converted cloud image to %s", tmpFileRaw.Name()))
+
+	cmdDD := exec.Command("dd", "if="+tmpFileRaw.Name(), "of="+destinationDevice, "bs=4M", "status=progress")
 	cmdDD.Stdout = os.Stdout
 	cmdDD.Stderr = os.Stderr
 
